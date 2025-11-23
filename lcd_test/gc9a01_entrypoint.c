@@ -28,6 +28,7 @@ static uint8_t bits = 8;
 static uint32_t speed = 500000;
 static uint16_t delay = 0;
 const char *chipname = "/dev/gpiochip0";
+static const char *pinmux_script = "./pinmux_setup.sh";
 
 static struct gpiod_chip *chip;
 static struct gpiod_line *line1;
@@ -195,6 +196,11 @@ void setup() {
 
     int gpio;
 	int spi;
+
+	/* Configure pinmux before touching GPIO/SPI */
+	if (system(pinmux_script) != 0) {
+		pabort("pinmux setup failed");
+	}
 	
 	gpio = setup_2gpio(chipname, DC, RES);
 	if (gpio != 0) {
