@@ -12,6 +12,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <math.h>
@@ -28,7 +29,7 @@ static uint8_t bits = 8;
 static uint32_t speed = 500000;
 static uint16_t delay = 0;
 const char *chipname = "/dev/gpiochip0";
-static const char *pinmux_script = "./pinmux_setup.sh";
+static const char *pinmux_script = "sh ./pinmux_setup.sh";
 
 static struct gpiod_chip *chip;
 static struct gpiod_line *line1;
@@ -40,6 +41,21 @@ int spi_fd;
 static void pabort(const char *s){
     perror(s);
     abort();
+}
+
+static int run_pinmux(void) {
+	int ret = system(pinmux_script);
+	if (ret == -1) {
+		perror("system(pinmux)");
+		return -1;
+	}
+
+	if (WIFEXITED(ret) && WEXITSTATUS(ret) == 0) {
+		return 0;
+	}
+
+	fprintf(stderr, "pinmux script exited with status %d\n", WEXITSTATUS(ret));
+	return -1;
 }
 
 
@@ -60,8 +76,7 @@ int spi_init(){
     ret = ioctl(spi_fd, SPI_IOC_RD_MODE, &mode);
     if (ret == -1)
         goto fail;
-
-    	/*
+    /*
 	 * bits per word
 	 */
 	ret = ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &bits);
@@ -198,7 +213,7 @@ void setup() {
 	int spi;
 
 	/* Configure pinmux before touching GPIO/SPI */
-	if (system(pinmux_script) != 0) {
+	if (run_pinmux() != 0) {
 		pabort("pinmux setup failed");
 	}
 	
@@ -223,7 +238,7 @@ void setup() {
 		pabort("GC9A01 init failed");
 	}
 
-	struct GC9A01_frame frame = {{0,0},{23,239}};
+	struct GC9A01_frame frame = {{0,0},{239,239}};
 	GC9A01_set_frame(frame);
 }
 
@@ -234,8 +249,10 @@ int main() {
     setup();
 
 	uint8_t color[3];
+	const struct GC9A01_frame full_frame = {{0,0},{239,239}};
 
 	// Triangle
+	GC9A01_set_frame(full_frame);
     color[0] = 0xFF;
     color[1] = 0xFF;
     for (int x = 0; x < 240; x++) {
@@ -253,9 +270,10 @@ int main() {
         }
     }
 
-    sleep(10);
+    sleep(1);
 
     // Rainbow
+	GC9A01_set_frame(full_frame);
     float frequency = 0.026;
     for (int x = 0; x < 240; x++) {
         color[0] = sin(frequency*x + 0) * 127 + 128;
@@ -270,9 +288,10 @@ int main() {
         }
     }
 
-    sleep(10);
+    sleep(1);
 
     // Checkerboard
+	GC9A01_set_frame(full_frame);
     for (int x = 0; x < 240; x++) {
         for (int y = 0; y < 240; y++) {
             if ((x / 10) % 2 ==  (y / 10) % 2) {
@@ -292,9 +311,10 @@ int main() {
         }
     }
 
-    sleep(10);
+    sleep(1);
 
     // Swiss flag
+	GC9A01_set_frame(full_frame);
     color[0] = 0xFF;
     for (int x = 0; x < 240; x++) {
         for (int y = 0; y < 240; y++) {
@@ -314,7 +334,7 @@ int main() {
         }
     }
 
-    sleep(10);
+    sleep(1);
 
 	close_gpio();
 	if (spi_fd >= 0) {
