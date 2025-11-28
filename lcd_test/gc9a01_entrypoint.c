@@ -337,9 +337,11 @@ int main() {
     sleep(1);
 
 	close_gpio();
+	printf("GPIO closed\n");
 	if (spi_fd >= 0) {
 		close(spi_fd);
 		spi_fd = -1;
+		printf("SPI closed\n");
 	}
     return 0;
 
