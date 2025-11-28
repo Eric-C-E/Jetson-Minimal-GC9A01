@@ -4,6 +4,7 @@
 * Copyright (c) 2025 Eric Liu
 */
 #include "GC9A01.h"
+#include "color_utils.h"
 
 #include <stdint.h>
 #include <unistd.h>
@@ -247,20 +248,20 @@ void setup() {
 int main() {
 
     setup();
-	//TODO check datasheet for color format 16 or 18 bit
-	uint8_t color[3];
+	
+	uint8_t color[2];
 	const struct GC9A01_frame full_frame = {{0,0},{239,239}};
 
 	// Triangle
 	GC9A01_set_frame(full_frame);
-    color[0] = 0xFF;
+    color[0] = 0x00;
     color[1] = 0xFF;
     for (int x = 0; x < 240; x++) {
         for (int y = 0; y < 240; y++) {
             if (x < y) {
-                color[2] = 0xFF;
+                color[1] = 0xFF;
             } else {
-                color[2] = 0x00;
+                color[1] = 0x00;
             }
             if (x == 0 && y == 0) {
                 GC9A01_write(color, sizeof(color));
@@ -276,14 +277,15 @@ int main() {
 	GC9A01_set_frame(full_frame);
     float frequency = 0.026;
     for (int x = 0; x < 240; x++) {
-        color[0] = sin(frequency*x + 0) * 127 + 128;
-        color[1] = sin(frequency*x + 2) * 127 + 128;
-        color[2] = sin(frequency*x + 4) * 127 + 128;
+        uint8_t r = sin(frequency*x + 0) * 127 + 128;
+        uint8_t g = sin(frequency*x + 2) * 127 + 128;
+        uint8_t b = sin(frequency*x + 4) * 127 + 128;
+        struct GC9A01_color packed = rgb_to_16bit(r, g, b);
         for (int y = 0; y < 240; y++) {
             if (x == 0 && y == 0) {
-                GC9A01_write(color, sizeof(color));
+                GC9A01_write(packed.bytes, packed.len);
             } else {
-                GC9A01_write_continue(color, sizeof(color));
+                GC9A01_write_continue(packed.bytes, packed.len);
             }
         }
     }
@@ -297,11 +299,11 @@ int main() {
             if ((x / 10) % 2 ==  (y / 10) % 2) {
                 color[0] = 0xFF;
                 color[1] = 0xFF;
-                color[2] = 0xFF;
+                //color[2] = 0xFF;
             } else {
                 color[0] = 0x00;
                 color[1] = 0x00;
-                color[2] = 0x00;
+                //color[2] = 0x00;
             }
             if (x == 0 && y == 0) {
                 GC9A01_write(color, sizeof(color));
@@ -315,21 +317,18 @@ int main() {
 
     // Swiss flag
 	GC9A01_set_frame(full_frame);
-    color[0] = 0xFF;
+    struct GC9A01_color red = rgb_to_16bit(0xFF, 0x00, 0x00);
+    struct GC9A01_color white = rgb_to_16bit(0xFF, 0xFF, 0xFF);
     for (int x = 0; x < 240; x++) {
         for (int y = 0; y < 240; y++) {
-            if ((x >= 1*48 && x < 4*48 && y >= 2*48 && y < 3*48) ||
-                (x >= 2*48 && x < 3*48 && y >= 1*48 && y < 4*48)) {
-                color[1] = 0xFF;
-                color[2] = 0xFF;
-            } else {
-                color[1] = 0x00;
-                color[2] = 0x00;
-            }
+            struct GC9A01_color *px = ((x >= 1*48 && x < 4*48 && y >= 2*48 && y < 3*48) ||
+                                              (x >= 2*48 && x < 3*48 && y >= 1*48 && y < 4*48))
+                                             ? &white
+                                             : &red;
             if (x == 0 && y == 0) {
-                GC9A01_write(color, sizeof(color));
+                GC9A01_write(px->bytes, px->len);
             } else {
-                GC9A01_write_continue(color, sizeof(color));
+                GC9A01_write_continue(px->bytes, px->len);
             }
         }
     }

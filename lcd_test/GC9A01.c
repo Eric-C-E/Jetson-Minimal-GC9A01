@@ -328,6 +328,7 @@ void GC9A01_sleep(uint8_t sleep){
     } else {
         GC9A01_write_command(0x11); // Sleep OUT
     }
+}
 
 void GC9A01_display_on(uint8_t on){
     if (on) {
@@ -349,6 +350,5 @@ void GC9A01_set_color_mode_18bit(){
     GC9A01_write_command(COLOR_MODE);
     GC9A01_write_byte(COLOR_MODE__18_BIT);
 }
-
 
 
