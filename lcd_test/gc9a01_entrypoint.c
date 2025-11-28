@@ -247,7 +247,7 @@ void setup() {
 int main() {
 
     setup();
-
+	//TODO check datasheet for color format 16 or 18 bit
 	uint8_t color[3];
 	const struct GC9A01_frame full_frame = {{0,0},{239,239}};
 

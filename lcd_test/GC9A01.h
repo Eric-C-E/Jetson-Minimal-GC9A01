@@ -31,6 +31,9 @@ int GC9A01_init(void);
 void GC9A01_set_frame(struct GC9A01_frame frame);
 void GC9A01_write(uint8_t *data, size_t len);
 void GC9A01_write_continue(uint8_t *data, size_t len);
+void GC9A01_invert_display(uint8_t invert);
+void GC9A01_sleep(uint8_t sleep);
+void GC9A01_display_on(uint8_t on);
 
 #ifdef __cplusplus
 }

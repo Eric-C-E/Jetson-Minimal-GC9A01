@@ -7,12 +7,12 @@
 // Command codes:
 #define COL_ADDR_SET        0x2A
 #define ROW_ADDR_SET        0x2B
-#define MEM_WR              0x2C
+#define MEM_WR              0x2C //important 1-N parameters after, 18 bits each.
 #define COLOR_MODE          0x3A
 #define COLOR_MODE__12_BIT  0x03
 #define COLOR_MODE__16_BIT  0x05
 #define COLOR_MODE__18_BIT  0x06
-#define MEM_WR_CONT         0x3C
+#define MEM_WR_CONT         0x3C //important 
 
 static void GC9A01_write_command(uint8_t cmd) {
     GC9A01_set_data_command(0);
@@ -103,7 +103,7 @@ int GC9A01_init(void) {
 #endif
     
     GC9A01_write_command(COLOR_MODE);
-    GC9A01_write_byte(COLOR_MODE__18_BIT);
+    GC9A01_write_byte(COLOR_MODE__16_BIT);
     
     GC9A01_write_command(0x90);
     GC9A01_write_byte(0x08);
@@ -302,7 +302,7 @@ void GC9A01_set_frame(struct GC9A01_frame frame) {
     GC9A01_write_data(data, sizeof(data));
     
 }
-
+//TODO architect a method to write a framebuffer and also, a dynamic partial update
 void GC9A01_write(uint8_t *data, size_t len) {
     GC9A01_write_command(MEM_WR);
     GC9A01_write_data(data, len);
@@ -312,3 +312,43 @@ void GC9A01_write_continue(uint8_t *data, size_t len) {
     GC9A01_write_command(MEM_WR_CONT);
     GC9A01_write_data(data, len);
 }
+
+//display inversion command
+void GC9A01_invert_display(uint8_t invert){
+    if (invert) {
+        GC9A01_write_command(0x21); // Inversion ON
+    } else {
+        GC9A01_write_command(0x20); // Inversion OFF
+    }
+}
+
+void GC9A01_sleep(uint8_t sleep){
+    if (sleep) {
+        GC9A01_write_command(0x10); // Sleep IN
+    } else {
+        GC9A01_write_command(0x11); // Sleep OUT
+    }
+
+void GC9A01_display_on(uint8_t on){
+    if (on) {
+        GC9A01_write_command(0x29); // Display ON
+    } else {
+        GC9A01_write_command(0x28); // Display OFF
+    }
+}
+
+// 0b0XXX0101 to set 16 bit color mode command 0x3A
+
+void GC9A01_set_color_mode_16bit(){
+    GC9A01_write_command(COLOR_MODE);
+    GC9A01_write_byte(COLOR_MODE__16_BIT);
+}
+
+//0b0XXX0110 to set 18 bit color mode command 0x3A
+void GC9A01_set_color_mode_18bit(){
+    GC9A01_write_command(COLOR_MODE);
+    GC9A01_write_byte(COLOR_MODE__18_BIT);
+}
+
+
+
