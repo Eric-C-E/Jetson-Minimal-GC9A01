@@ -5,6 +5,7 @@
 */
 #include "GC9A01.h"
 #include "color_utils.h"
+#include "socket_rx.h"
 
 #include <stdint.h>
 #include <unistd.h>
@@ -332,6 +333,26 @@ int main() {
             }
         }
     }
+
+	//test the receiving socket here
+	int server_fd = setup_socket();
+	if (server_fd == -1) {
+		pabort("socket setup failed");
+	}
+	uint8_t buffer[1024]; //buffer for receiving strings UTF-8 encoded
+	int bytes_received = receive_data(server_fd, buffer, sizeof(buffer));
+	if (bytes_received > 0) {
+		printf("Received %d bytes\n", bytes_received);
+		// Process the received data...
+	}
+	else if (bytes_received == -1) {
+		printf("Error receiving data\n");
+	}
+	else {
+		printf("No data received\n");
+	}
+	close_socket(server_fd);
+	printf("Socket closed\n");
 
     sleep(1);
 
