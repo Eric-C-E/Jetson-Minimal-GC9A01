@@ -2,10 +2,12 @@
 * GC9A01 Graphics Chip based LCD screen
 * over SPI
 * Copyright (c) 2025 Eric Liu
+* MIT License
 */
 #include "GC9A01.h"
 #include "color_utils.h"
 #include "socket_rx.h"
+#include "framebuffer.h"
 
 #include <stdint.h>
 #include <unistd.h>
@@ -18,6 +20,7 @@
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
 #include <math.h>
+#include <string.h>
 
 #include <gpiod.h>
 
@@ -249,9 +252,27 @@ void setup() {
 int main() {
 
     setup();
-	
+	//for primitive shape tests
 	uint8_t color[2];
 	const struct GC9A01_frame full_frame = {{0,0},{239,239}};
+	//framebuffer allocation
+	size_t fb_size = 240 * 240 * 3; //240x240 pixels, 2 bytes per pixel
+	uint8_t *framebuffer = (uint8_t *)malloc(fb_size);
+	if (framebuffer == NULL) {
+		pabort("failed to allocate framebuffer");
+	}
+	memset(framebuffer, 0x00, fb_size); //initialize to black
+
+	//framebuffer test pattern drawing
+	//put a test cross in the center
+	fb_draw_test_cross(framebuffer, 120, 120, 255, 0, 0); //red cross
+	//put some text
+	fb_draw_string(framebuffer, "Hello, GC9A01!\nLine 2\nLine 3", 10, 10, 0, 255, 0); //green text
+	//send framebuffer to LCD
+	GC9A01_set_frame(full_frame);
+	fb_write_to_gc9a01(framebuffer, 0, 0, 239, 239);
+	
+	sleep(10);
 
 	// Triangle
 	GC9A01_set_frame(full_frame);
@@ -334,6 +355,11 @@ int main() {
         }
     }
 
+	GC9A01_invert_display(1);
+	sleep(10);
+	GC9A01_invert_display(0);
+
+
 	//test the receiving socket here
 	int server_fd = setup_socket();
 	if (server_fd == -1) {
@@ -354,8 +380,8 @@ int main() {
 	close_socket(server_fd);
 	printf("Socket closed\n");
 
-    sleep(1);
-
+	//cleanup
+	free(framebuffer);
 	close_gpio();
 	printf("GPIO closed\n");
 	if (spi_fd >= 0) {
@@ -366,6 +392,3 @@ int main() {
     return 0;
 
 }
-
-
-//TODO eventually close the connections SPI and 2x GPIOS on keyboard exit
