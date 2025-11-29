@@ -7,6 +7,7 @@ and framebuffer size tests*/
 #include "framebuffer.h"
 #include "font8x16.h"
 #include "color_utils.h"
+#include "GC9A01.h"
 
 #include <string.h>
 #include <stdlib.h>

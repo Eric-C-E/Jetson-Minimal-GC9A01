@@ -272,7 +272,8 @@ int main() {
 	GC9A01_set_frame(full_frame);
 	fb_write_to_gc9a01(framebuffer, 0, 0, 239, 239);
 	
-	sleep(10);
+	printf("Displayed framebuffer test pattern\n");
+	sleep(2);
 
 	// Triangle
 	GC9A01_set_frame(full_frame);
