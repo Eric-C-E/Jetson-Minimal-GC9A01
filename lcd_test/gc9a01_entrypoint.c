@@ -267,10 +267,10 @@ int main() {
 	//put a test cross in the center
 	fb_draw_test_cross(framebuffer, 120, 120, 255, 0, 0); //red cross
 	//put some text
-	fb_draw_string(framebuffer, "Hello, GC9A01!\nLine 2\nLine 3", 10, 10, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "Hello, GC9A01!\nLine 2\nLine 3", 140, 120, 0, 255, 0); //green text
 	//send framebuffer to LCD
 	GC9A01_set_frame(full_frame);
-	fb_write_to_gc9a01(framebuffer, 0, 0, 239, 239);
+	fb_write_to_gc9a01(framebuffer, 0, 0, 240, 240);
 	
 	printf("Displayed framebuffer test pattern\n");
 	sleep(2);

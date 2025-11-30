@@ -87,13 +87,15 @@ void fb_draw_test_cross(uint8_t *framebuffer, int x, int y,
 
 //function to write all framebuffer bytes to GC9A01 within (x1,x2,y1,y2)
 void fb_write_to_gc9a01(uint8_t *framebuffer, int x1, int y1, int x2, int y2) {
+    /* x2/y2 are treated as exclusive bounds (like width/height),
+     * matching how the test patterns stream pixels: x in [x1, x2) then y in [y1, y2). */
     if (x1 < 0) x1 = 0;
     if (y1 < 0) y1 = 0;
     if (x2 > FB_WIDTH) x2 = FB_WIDTH;
     if (y2 > FB_HEIGHT) y2 = FB_HEIGHT;
 
-    for (int y = y1; y < y2; y++) {
-        for (int x = x1; x < x2; x++) {
+    for (int x = x1; x < x2; x++) {
+        for (int y = y1; y < y2; y++) {
             size_t fb_index = (y * FB_WIDTH + x) * FB_BPP;
             uint8_t r = framebuffer[fb_index];
             uint8_t g = framebuffer[fb_index + 1];
@@ -107,8 +109,5 @@ void fb_write_to_gc9a01(uint8_t *framebuffer, int x1, int y1, int x2, int y2) {
         }
     }
 }
-
-
-
 
 
