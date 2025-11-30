@@ -27,6 +27,10 @@
 //define LINE NUMBERS <-> 40 pin hdr pins used by GPIO
 #define RES 106
 #define DC 105
+//define display parameters for screen text
+#define MAX_ROWS 10
+#define MAX_CHARS 22
+
 
 static const char *device = "/dev/spidev0.0";
 static uint8_t mode = 0;
@@ -274,7 +278,7 @@ int main() {
 	if (framebuffer == NULL) {
 		pabort("failed to allocate framebuffer");
 	}
-	memset(framebuffer, 0x00, fb_size); //initialize to black
+	fb_clear(framebuffer);
 
 	//framebuffer test pattern drawing
 
@@ -292,12 +296,14 @@ int main() {
 	//put some text
 	printf("trying to write fast\n");
 
-	fb_draw_string(framebuffer, "bottom", 30, 159, 0, 255, 0); //green text
-	fb_draw_string(framebuffer, "going up!", 30, 140, 0, 255, 0); //green text
-	fb_draw_string(framebuffer, "to the top", 30, 121, 0, 255, 0); //green text
-	fb_draw_string(framebuffer, "GC9A01 Test", 30, 102, 0, 255, 0); //green text
-	fb_draw_string(framebuffer, "more...", 30, 83, 0, 255, 0); //green text
-	fb_draw_string(framebuffer, "almost", 30, 64, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "Hello, GC9A01!", 30, 177, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "This is a test", 30, 161, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "bottom", 30, 141, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "going up!", 30, 125, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "we don't use neli", 30, 109, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "TESTING 22 CHARACTERS!", 30, 93, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "more...", 30, 77, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "almost", 30, 61, 0, 255, 0); //green text
 	fb_draw_string(framebuffer, "top!", 30, 45, 0, 255, 0); //green text
 
 
@@ -395,7 +401,7 @@ int main() {
 	if (server_fd == -1) {
 		pabort("socket setup failed");
 	}
-	uint8_t buffer[1024]; //buffer for receiving strings UTF-8 encoded
+	char buffer[1024]; //buffer for receiving strings UTF-8 encoded
 	int bytes_received = receive_data(server_fd, buffer, sizeof(buffer));
 	if (bytes_received > 0) {
 		printf("Received %d bytes\n", bytes_received);

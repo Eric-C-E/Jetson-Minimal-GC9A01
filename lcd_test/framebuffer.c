@@ -29,6 +29,12 @@ and framebuffer size tests*/
 #define FONT_WIDTH 8
 #define FONT_HEIGHT 16
 
+#define MAX_ROWS 9
+#define MAX_CHARS 22
+
+#define LOWEST_ROW_Y 177
+#define TOP_ROW_Y 45
+
 //function to draw a character at (x,y) in the framebuffer
 void fb_draw_char(uint8_t *framebuffer, char c, int x, int y,
                   uint8_t r, uint8_t g, uint8_t b)
@@ -96,7 +102,7 @@ void fb_draw_test_cross(uint8_t *framebuffer, int x, int y,
     }
 }
 
-//function to write all framebuffer bytes to GC9A01 within the given frame
+//unoptimized function to write all framebuffer bytes to GC9A01 within the given frame
 void fb_write_to_gc9a01(uint8_t *framebuffer, struct GC9A01_frame frame) {
     /* GC9A01_frame uses inclusive end coords; convert to exclusive for loops. */
     int x1 = frame.start.X;
@@ -183,6 +189,69 @@ void fb_write_to_gc9a01_fast(uint8_t *framebuffer, struct GC9A01_frame frame) {
 void fb_clear(uint8_t *framebuffer) {
     memset(framebuffer, 0x00, FB_SIZE);
 }
+
+//Internal string management: keep track of existing rows and their contents. Write entire contents to framebuffer once per cycle.
+
+static char lines[MAX_ROWS][MAX_CHARS + 1]; // +1 for null terminator
+static int current_row = 0;
+
+void textbuffer_initialize() {
+    memset(lines, 0, sizeof(lines));
+    current_row = 0;
+}   
+
+//shift all lines up by one, dropping the top line without populating a new line
+//leaves a blank line at the bottom
+void textbuffer_shift_up() {
+    for (int i = 1; i < MAX_ROWS - 1; i++) {
+        strncpy(lines[i], lines[i - 1], MAX_CHARS);
+    }
+}
+
+//function to check incoming string data over socket and receive into buffer while appending the part that fits to the lowest available row, adding lines as needed
+void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[], int bytes_received) {
+    //recursive function
+    //check if the string doesn't fit in the current line
+    size_t len = strlen(receive_buffer);
+    size_t space_left = MAX_CHARS - strlen(lines[0]);
+    if (space_left < len) {
+        //fits exactly or overflows
+        strncat(lines[0], receive_buffer, space_left);
+        //shift up
+        textbuffer_shift_up();
+        //recurse with leftovers
+        fb_receive_and_update_text(framebuffer, receive_buffer + space_left, len - space_left);
+        return;
+    } else if (space_left == len) {
+        //fits exactly
+        strncat(lines[0], receive_buffer, len);
+        //shift up for next line
+        textbuffer_shift_up();
+        return;
+    }
+    else {
+        //fits with space left
+        strncat(lines[0], receive_buffer, len);
+        return;
+    }
+}
+
+void textbuffer_render(uint8_t *framebuffer) {
+    fb_clear(framebuffer);
+
+    //render the entire framebuffer from text lines
+    fb_draw_string(framebuffer, lines[0], 30, 177, 0, 255, 0); //lowest string on screen
+	fb_draw_string(framebuffer, lines[1], 30, 161, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[2], 30, 141, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[3], 30, 125, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[4], 30, 109, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[5], 30, 93, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[6], 30, 77, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[7], 30, 61, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, lines[8], 30, 45, 0, 255, 0); //highest string on screen
+}
+
+
 
 
 
