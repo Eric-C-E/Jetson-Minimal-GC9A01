@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "GC9A01.h"
 
 
 
@@ -13,6 +14,8 @@ void fb_draw_string(uint8_t *framebuffer, const char *str, int x, int y,
                    uint8_t r, uint8_t g, uint8_t b);
 void fb_draw_test_cross(uint8_t *framebuffer, int x, int y, 
                        uint8_t r, uint8_t g, uint8_t b);
-void fb_write_to_gc9a01(uint8_t *framebuffer, int x1, int y1, int x2, int y2);
+void fb_write_to_gc9a01(uint8_t *framebuffer, struct GC9A01_frame frame);
+void fb_write_to_gc9a01_fast(uint8_t *framebuffer, struct GC9A01_frame frame);
+void fb_clear(uint8_t *framebuffer);
 
 #endif

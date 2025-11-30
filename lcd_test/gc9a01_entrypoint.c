@@ -131,19 +131,24 @@ void GC9A01_set_data_command(uint8_t val){
 }
 
 void GC9A01_spi_tx(uint8_t *data, size_t len){
-	int ret;
+	const size_t chunk_size = 4096; // conservative max transfer size for Jetson kernel
 
-	struct spi_ioc_transfer tr = {
-		.tx_buf = (unsigned long)data,
-		.rx_buf = 0,
-		.len = len,
-		.delay_usecs = delay,
-		.speed_hz = speed,
-		.bits_per_word = bits,
-	};
-	ret = ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr);
-	if (ret < 1)
-		pabort("can't send spi message");
+	for (size_t offset = 0; offset < len; offset += chunk_size) {
+		size_t this_len = (len - offset < chunk_size) ? (len - offset) : chunk_size;
+
+		struct spi_ioc_transfer tr = {
+			.tx_buf = (unsigned long)(data + offset),
+			.rx_buf = 0,
+			.len = this_len,
+			.delay_usecs = delay,
+			.speed_hz = speed,
+			.bits_per_word = bits,
+		};
+
+		if (ioctl(spi_fd, SPI_IOC_MESSAGE(1), &tr) < 1) {
+			pabort("can't send spi message");
+		}
+	}
 }
 
 int setup_2gpio(char *chipname, int line_1, int line_2) {
@@ -229,6 +234,8 @@ void setup() {
 
     sleep(1);
 
+	printf("Initializing SPI...\n");
+
 	spi = spi_init();
 	if (spi != 0) {
 		close_gpio();
@@ -253,9 +260,13 @@ int main() {
 
     setup();
 	//for primitive shape tests
+	printf("IO Initialized, Starting Tests\n");
+
 	uint8_t color[2];
-	const struct GC9A01_frame full_frame = {{0,0},{239,239}}; //full screen frame
-	const struct GC9A01_frame text_frame = {{30,45},{210,195}}; //for displaying text 
+	const struct GC9A01_frame full_frame = {{0,0},{239,239}}; //full screen frame (inclusive)
+	/* GC9A01_set_frame uses inclusive end coords; match them to the exclusive
+	 * bounds passed to fb_write_to_gc9a01* (x2=210,y2=195 -> last pixel 209,194). */
+	const struct GC9A01_frame text_frame = {{30,45},{209,194}}; //for displaying text 
 	const struct GC9A01_frame SoC_frame = {{110, 195}, {130, 215}}; //for displaying batt soc
 	//framebuffer allocation
 	size_t fb_size = 240 * 240 * 3; //240x240 pixels, 2 bytes per pixel
@@ -282,7 +293,7 @@ int main() {
 	fb_draw_string(framebuffer, "Hello, GC9A01!", 90, 120, 0, 255, 0); //green text
 	//send framebuffer to LCD
 	GC9A01_set_frame(full_frame);
-	fb_write_to_gc9a01(framebuffer, 0, 0, 240, 240);
+	fb_write_to_gc9a01(framebuffer, full_frame);
 	
 	printf("Displayed framebuffer test pattern\n");
 	sleep(1);
@@ -292,11 +303,12 @@ int main() {
 
 	fb_draw_string(framebuffer, "Fast Write!", 80, 140, 255, 0, 0); //red text
 	//send framebuffer to LCD
-	GC9A01_set_frame(text_frame);
-	fb_write_to_gc9a01_fast(framebuffer, 30, 45, 210, 195);
+	GC9A01_set_frame(full_frame);
+	fb_write_to_gc9a01_fast(framebuffer, full_frame);
 	printf("Displayed fast framebuffer test pattern\n");
 	sleep(1);
-/*
+
+	/*
 	// Triangle
 	GC9A01_set_frame(full_frame);
     color[0] = 0x00;
@@ -377,8 +389,9 @@ int main() {
             }
         }
     }
-
 */
+
+
 
 	GC9A01_invert_display(1);
 	sleep(1);

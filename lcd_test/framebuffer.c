@@ -96,15 +96,20 @@ void fb_draw_test_cross(uint8_t *framebuffer, int x, int y,
     }
 }
 
-//function to write all framebuffer bytes to GC9A01 within (x1,x2,y1,y2) IMPORTANT: define frame as same
-void fb_write_to_gc9a01(uint8_t *framebuffer, int x1, int y1, int x2, int y2) {
-    /* x2/y2 are treated as exclusive bounds (like width/height),
-     * matching how the test patterns stream pixels: x in [x1, x2) then y in [y1, y2). */
+//function to write all framebuffer bytes to GC9A01 within the given frame
+void fb_write_to_gc9a01(uint8_t *framebuffer, struct GC9A01_frame frame) {
+    /* GC9A01_frame uses inclusive end coords; convert to exclusive for loops. */
+    int x1 = frame.start.X;
+    int y1 = frame.start.Y;
+    int x2 = frame.end.X + 1;
+    int y2 = frame.end.Y + 1;
+
     if (x1 < 0) x1 = 0;
     if (y1 < 0) y1 = 0;
     if (x2 > FB_WIDTH) x2 = FB_WIDTH;
     if (y2 > FB_HEIGHT) y2 = FB_HEIGHT;
 
+    /* Column-major stream: step through each column (x) and all rows (y) inside. */
     for (int x = x1; x < x2; x++) {
         for (int y = y1; y < y2; y++) {
             size_t fb_index = (y * FB_WIDTH + x) * FB_BPP;
@@ -124,9 +129,14 @@ void fb_write_to_gc9a01(uint8_t *framebuffer, int x1, int y1, int x2, int y2) {
 //IMPORTANT: define frame as same
 //as long as frame is larger, will work
 //smaller will be more optimized, so if keep index tracking text size, can make faster
-void fb_write_to_gc9a01_fast(uint8_t *framebuffer, int x1, int y1, int x2, int y2) {
-    /* x2/y2 are treated as exclusive bounds (like width/height),
-     * matching how the test patterns stream pixels: x in [x1, x2) then y in [y1, y2). */
+//16 bit color assumed
+void fb_write_to_gc9a01_fast(uint8_t *framebuffer, struct GC9A01_frame frame) {
+    /* GC9A01_frame uses inclusive end coords; convert to exclusive for loops. */
+    int x1 = frame.start.X;
+    int y1 = frame.start.Y;
+    int x2 = frame.end.X + 1;
+    int y2 = frame.end.Y + 1;
+
     if (x1 < 0) x1 = 0;
     if (y1 < 0) y1 = 0;
     if (x2 > FB_WIDTH) x2 = FB_WIDTH;
@@ -141,6 +151,7 @@ void fb_write_to_gc9a01_fast(uint8_t *framebuffer, int x1, int y1, int x2, int y
     }
 
     size_t index = 0;
+    /* Match the slow-path ordering: column-major (x outer, y inner). */
     for (int x = x1; x < x2; x++) {
         for (int y = y1; y < y2; y++) {
             size_t fb_index = (y * FB_WIDTH + x) * FB_BPP;
@@ -153,11 +164,26 @@ void fb_write_to_gc9a01_fast(uint8_t *framebuffer, int x1, int y1, int x2, int y
         }
     }
 
-    GC9A01_write(packed_buffer, packed_size);
+    // stream to the panel in 4 KB chunks using MEM_WR then MEM_WR_CONT
+    const size_t chunk_size = 4096;
+    for (size_t offset = 0; offset < packed_size; offset += chunk_size) {
+        size_t bytes_to_write = (offset + chunk_size < packed_size) ? chunk_size : (packed_size - offset);
+        if (offset == 0) {
+            GC9A01_write(&packed_buffer[offset], bytes_to_write);
+        } else {
+            GC9A01_write_continue(&packed_buffer[offset], bytes_to_write);
+        }
+    }
+
+    //free memory
     free(packed_buffer);
+
+}
+//clear framebuffer to black
+void fb_clear(uint8_t *framebuffer) {
+    memset(framebuffer, 0x00, FB_SIZE);
 }
 
 
 
 //end of framebuffer.c
-

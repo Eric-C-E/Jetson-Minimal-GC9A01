@@ -350,5 +350,3 @@ void GC9A01_set_color_mode_18bit(){
     GC9A01_write_command(COLOR_MODE);
     GC9A01_write_byte(COLOR_MODE__18_BIT);
 }
-
-
