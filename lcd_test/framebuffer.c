@@ -112,7 +112,7 @@ void fb_write_to_gc9a01(uint8_t *framebuffer, struct GC9A01_frame frame) {
     /* Column-major stream: step through each column (x) and all rows (y) inside. */
     for (int x = x1; x < x2; x++) {
         for (int y = y1; y < y2; y++) {
-            size_t fb_index = (y * FB_WIDTH + x) * FB_BPP;
+            size_t fb_index = (y * FB_HEIGHT + x) * FB_BPP;
             uint8_t r = framebuffer[fb_index];
             uint8_t g = framebuffer[fb_index + 1];
             uint8_t b = framebuffer[fb_index + 2];
@@ -154,7 +154,7 @@ void fb_write_to_gc9a01_fast(uint8_t *framebuffer, struct GC9A01_frame frame) {
     /* Match the slow-path ordering: column-major (x outer, y inner). */
     for (int x = x1; x < x2; x++) {
         for (int y = y1; y < y2; y++) {
-            size_t fb_index = (y * FB_WIDTH + x) * FB_BPP;
+            size_t fb_index = (y * FB_HEIGHT + x) * FB_BPP;
             uint8_t r = framebuffer[fb_index];
             uint8_t g = framebuffer[fb_index + 1];
             uint8_t b = framebuffer[fb_index + 2];
