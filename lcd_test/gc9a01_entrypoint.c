@@ -254,7 +254,9 @@ int main() {
     setup();
 	//for primitive shape tests
 	uint8_t color[2];
-	const struct GC9A01_frame full_frame = {{0,0},{239,239}};
+	const struct GC9A01_frame full_frame = {{0,0},{239,239}}; //full screen frame
+	const struct GC9A01_frame text_frame = {{30,45},{210,195}}; //for displaying text 
+	const struct GC9A01_frame SoC_frame = {{110, 195}, {130, 215}}; //for displaying batt soc
 	//framebuffer allocation
 	size_t fb_size = 240 * 240 * 3; //240x240 pixels, 2 bytes per pixel
 	uint8_t *framebuffer = (uint8_t *)malloc(fb_size);
@@ -265,16 +267,36 @@ int main() {
 
 	//framebuffer test pattern drawing
 	//put a test cross in the center
-	fb_draw_test_cross(framebuffer, 120, 120, 255, 0, 0); //red cross
+	fb_draw_test_cross(framebuffer, 0, 120, 0, 255, 0); //green cross left edge
+	fb_draw_test_cross(framebuffer, 239, 120, 0, 255, 0); //green cross right edge
+	fb_draw_test_cross(framebuffer, 140, 120, 0, 0, 255); //blue cross near at string start
+	fb_draw_test_cross(framebuffer, 120, 0, 255, 255, 0); //yellow cross top edge
+	//fb_draw_test_cross(framebuffer, 120, 239, 255, 255, 0); //yellow cross bottom edge
+
+	fb_draw_test_cross(framebuffer, 30, 45, 255, 0, 255); //magenta cross upper left
+	fb_draw_test_cross(framebuffer, 210, 45, 255, 0, 255); //magenta cross upper right
+	fb_draw_test_cross(framebuffer, 30, 195, 255, 0, 255); //magenta cross lower left
+	fb_draw_test_cross(framebuffer, 210, 195, 255, 0, 255); //magenta cross lower right
+	
 	//put some text
-	fb_draw_string(framebuffer, "Hello, GC9A01!\nLine 2\nLine 3", 140, 120, 0, 255, 0); //green text
+	fb_draw_string(framebuffer, "Hello, GC9A01!", 90, 120, 0, 255, 0); //green text
 	//send framebuffer to LCD
 	GC9A01_set_frame(full_frame);
 	fb_write_to_gc9a01(framebuffer, 0, 0, 240, 240);
 	
 	printf("Displayed framebuffer test pattern\n");
-	sleep(2);
+	sleep(1);
 
+	printf("trying to write fast\n");
+	sleep(1);
+
+	fb_draw_string(framebuffer, "Fast Write!", 80, 140, 255, 0, 0); //red text
+	//send framebuffer to LCD
+	GC9A01_set_frame(text_frame);
+	fb_write_to_gc9a01_fast(framebuffer, 30, 45, 210, 195);
+	printf("Displayed fast framebuffer test pattern\n");
+	sleep(1);
+/*
 	// Triangle
 	GC9A01_set_frame(full_frame);
     color[0] = 0x00;
@@ -356,8 +378,10 @@ int main() {
         }
     }
 
+*/
+
 	GC9A01_invert_display(1);
-	sleep(10);
+	sleep(1);
 	GC9A01_invert_display(0);
 
 
