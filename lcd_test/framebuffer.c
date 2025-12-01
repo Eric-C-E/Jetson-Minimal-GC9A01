@@ -203,35 +203,39 @@ void textbuffer_initialize() {
 //shift all lines up by one, dropping the top line without populating a new line
 //leaves a blank line at the bottom
 void textbuffer_shift_up() {
-    for (int i = 1; i < MAX_ROWS - 1; i++) {
-        strncpy(lines[i], lines[i - 1], MAX_CHARS);
+    for (int i = MAX_ROWS - 1; i >= 1; i--) {
+        strncpy(lines[i], lines[i - 1], MAX_CHARS + 1);
     }
+    //clear the lowest line
+    memset(lines[0], 0, MAX_CHARS + 1);
 }
 
 //function to check incoming string data over socket and receive into buffer while appending the part that fits to the lowest available row, adding lines as needed
-void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[], int bytes_received) {
+void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[]) {
+    //assumes null-terminated string in receive_buffer
     //recursive function
     //check if the string doesn't fit in the current line
-    size_t len = strlen(receive_buffer);
+    size_t bytes_received = strlen(receive_buffer);
+
     size_t space_left = MAX_CHARS - strlen(lines[0]);
-    if (space_left < len) {
+    if (space_left < bytes_received) {
         //fits exactly or overflows
         strncat(lines[0], receive_buffer, space_left);
         //shift up
         textbuffer_shift_up();
         //recurse with leftovers
-        fb_receive_and_update_text(framebuffer, receive_buffer + space_left, len - space_left);
+        fb_receive_and_update_text(framebuffer, receive_buffer + space_left);
         return;
-    } else if (space_left == len) {
+    } else if (space_left == bytes_received) {
         //fits exactly
-        strncat(lines[0], receive_buffer, len);
+        strncat(lines[0], receive_buffer, bytes_received);
         //shift up for next line
         textbuffer_shift_up();
         return;
     }
     else {
         //fits with space left
-        strncat(lines[0], receive_buffer, len);
+        strncat(lines[0], receive_buffer, bytes_received);
         return;
     }
 }

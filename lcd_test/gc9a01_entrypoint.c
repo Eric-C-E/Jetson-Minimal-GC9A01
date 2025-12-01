@@ -258,6 +258,10 @@ void setup() {
 	GC9A01_set_frame(frame);
 }
 
+void loop() {
+	//empty loop
+}
+
 //program entrypoint
 
 int main() {
@@ -307,94 +311,36 @@ int main() {
 	fb_draw_string(framebuffer, "top!", 30, 45, 0, 255, 0); //green text
 
 
-	printf("framebuffer populated\n");
 	//send framebuffer to LCD
 	GC9A01_set_frame(full_frame);
 	fb_write_to_gc9a01_fast(framebuffer, full_frame);
 	printf("Displayed fast framebuffer test pattern\n");
 
-	/*
-	// Triangle
+	sleep(2);
+	printf("simulating socket receive...\n");
+	//simulate receiving data over socket, no newline characters
+	char test_string[] = "This is a test of";
+	fb_receive_and_update_text(framebuffer, test_string);
+	textbuffer_render(framebuffer);
 	GC9A01_set_frame(full_frame);
-    color[0] = 0x00;
-    color[1] = 0xFF;
-    for (int x = 0; x < 240; x++) {
-        for (int y = 0; y < 240; y++) {
-            if (x < y) {
-                color[1] = 0xFF;
-            } else {
-                color[1] = 0x00;
-            }
-            if (x == 0 && y == 0) {
-                GC9A01_write(color, sizeof(color));
-            } else {
-                GC9A01_write_continue(color, sizeof(color));
-            }
-        }
-    }
+	fb_write_to_gc9a01_fast(framebuffer, full_frame);
+	printf("Displayed received text over socket\n");
 
-    sleep(1);
+	sleep(2);
+	printf("simulating another socket receive...\n");
+	//simulate receiving data over socket, with newline characters
+	char test_string2[] = "this time, it's longer and it's crazy! HAHAHAHAHA";
 
-    // Rainbow
+	fb_receive_and_update_text(framebuffer, test_string2);
+	textbuffer_render(framebuffer);
 	GC9A01_set_frame(full_frame);
-    float frequency = 0.026;
-    for (int x = 0; x < 240; x++) {
-        uint8_t r = sin(frequency*x + 0) * 127 + 128;
-        uint8_t g = sin(frequency*x + 2) * 127 + 128;
-        uint8_t b = sin(frequency*x + 4) * 127 + 128;
-        struct GC9A01_color packed = rgb_to_16bit(r, g, b);
-        for (int y = 0; y < 240; y++) {
-            if (x == 0 && y == 0) {
-                GC9A01_write(packed.bytes, packed.len);
-            } else {
-                GC9A01_write_continue(packed.bytes, packed.len);
-            }
-        }
-    }
+	fb_write_to_gc9a01_fast(framebuffer, full_frame);
+	printf("Displayed received text over socket\n");
 
-    sleep(1);
+	sleep(10);
 
-    // Checkerboard
-	GC9A01_set_frame(full_frame);
-    for (int x = 0; x < 240; x++) {
-        for (int y = 0; y < 240; y++) {
-            if ((x / 10) % 2 ==  (y / 10) % 2) {
-                color[0] = 0xFF;
-                color[1] = 0xFF;
-                //color[2] = 0xFF;
-            } else {
-                color[0] = 0x00;
-                color[1] = 0x00;
-                //color[2] = 0x00;
-            }
-            if (x == 0 && y == 0) {
-                GC9A01_write(color, sizeof(color));
-            } else {
-                GC9A01_write_continue(color, sizeof(color));
-            }
-        }
-    }
 
-    sleep(1);
 
-    // Swiss flag
-	GC9A01_set_frame(full_frame);
-    struct GC9A01_color red = rgb_to_16bit(0xFF, 0x00, 0x00);
-    struct GC9A01_color white = rgb_to_16bit(0xFF, 0xFF, 0xFF);
-    for (int x = 0; x < 240; x++) {
-        for (int y = 0; y < 240; y++) {
-            struct GC9A01_color *px = ((x >= 1*48 && x < 4*48 && y >= 2*48 && y < 3*48) ||
-                                              (x >= 2*48 && x < 3*48 && y >= 1*48 && y < 4*48))
-                                             ? &white
-                                             : &red;
-            if (x == 0 && y == 0) {
-                GC9A01_write(px->bytes, px->len);
-            } else {
-                GC9A01_write_continue(px->bytes, px->len);
-            }
-        }
-    }
-*/
 
 	//test the receiving socket here
 	int server_fd = setup_socket();

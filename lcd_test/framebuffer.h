@@ -21,7 +21,7 @@ void fb_clear(uint8_t *framebuffer);
 //Internal string management functions
 void textbuffer_initialize();
 void textbuffer_shift_up();
-void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[], int bytes_received);
+void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[]);
 void textbuffer_render(uint8_t *framebuffer);
 
 
