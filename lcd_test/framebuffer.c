@@ -138,10 +138,10 @@ void fb_write_to_gc9a01(uint8_t *framebuffer, struct GC9A01_frame frame) {
 //16 bit color assumed
 void fb_write_to_gc9a01_fast(uint8_t *framebuffer, struct GC9A01_frame frame) {
     /* GC9A01_frame uses inclusive end coords; convert to exclusive for loops. */
-    int x1 = frame.start.X;
-    int y1 = frame.start.Y;
-    int x2 = frame.end.X + 1;
-    int y2 = frame.end.Y + 1;
+    int x1 = frame.start.Y;
+    int y1 = frame.start.X;
+    int x2 = frame.end.Y + 1;
+    int y2 = frame.end.X + 1;
 
     if (x1 < 0) x1 = 0;
     if (y1 < 0) y1 = 0;

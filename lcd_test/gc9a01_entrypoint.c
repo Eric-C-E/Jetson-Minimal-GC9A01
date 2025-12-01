@@ -274,7 +274,7 @@ int main() {
 	const struct GC9A01_frame full_frame = {{0,0},{239,239}}; //full screen frame (inclusive)
 	/* GC9A01_set_frame uses inclusive end coords; match them to the exclusive
 	 * bounds passed to fb_write_to_gc9a01* (x2=210,y2=195 -> last pixel 209,194). */
-	const struct GC9A01_frame text_frame = {{30,45},{210,195}}; //for displaying text 
+	const struct GC9A01_frame text_frame = {{45, 30},{195, 210}}; //for displaying text 
 	const struct GC9A01_frame SoC_frame = {{110, 195}, {130, 215}}; //for displaying batt soc
 	//framebuffer allocation
 	size_t fb_size = 240 * 240 * 3; //240x240 pixels, 2 bytes per pixel
@@ -333,8 +333,8 @@ int main() {
 
 	fb_receive_and_update_text(framebuffer, test_string2);
 	textbuffer_render(framebuffer);
-	GC9A01_set_frame(full_frame);
-	fb_write_to_gc9a01_fast(framebuffer, full_frame);
+	GC9A01_set_frame(text_frame);
+	fb_write_to_gc9a01_fast(framebuffer, text_frame);
 	printf("Displayed received text over socket\n");
 
 	sleep(10);
