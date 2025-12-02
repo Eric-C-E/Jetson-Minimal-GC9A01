@@ -46,6 +46,11 @@ static struct gpiod_line *line2;
 
 int spi_fd;
 
+int stop_pin = 0; //use for hardware interrupt stop later on
+int stop_counter = 0; //use for testing
+int stop_flag = 0;
+
+
 
 static void pabort(const char *s){
     perror(s);
@@ -222,7 +227,7 @@ void close_gpio(void) {
 //use usleep(POSIX) for microseconds of sleep
 
 void setup() {
-
+	//sets up GPIO, SPI, and initializes GC9A01
     int gpio;
 	int spi;
 
@@ -258,22 +263,16 @@ void setup() {
 	GC9A01_set_frame(frame);
 }
 
-void loop() {
-	//empty loop
-}
-
 //program entrypoint
 
 int main() {
 
     setup();
-	//for primitive shape tests
-	printf("IO Initialized, Starting Tests\n");
+
+	printf("IO Initialized, Loading Screen\n");
 
 	uint8_t color[2];
 	const struct GC9A01_frame full_frame = {{0,0},{239,239}}; //full screen frame (inclusive)
-	/* GC9A01_set_frame uses inclusive end coords; match them to the exclusive
-	 * bounds passed to fb_write_to_gc9a01* (x2=210,y2=195 -> last pixel 209,194). */
 	const struct GC9A01_frame text_frame = {{45, 30},{195, 210}}; //for displaying text 
 	const struct GC9A01_frame SoC_frame = {{110, 195}, {130, 215}}; //for displaying batt soc
 	//framebuffer allocation
@@ -298,7 +297,7 @@ int main() {
 	//}
 	
 	//put some text
-	printf("trying to write fast\n");
+	printf("writing test filler text\n");
 
 	fb_draw_string(framebuffer, "Hello, GC9A01!", 30, 177, 0, 255, 0); //green text
 	fb_draw_string(framebuffer, "This is a test", 30, 161, 0, 255, 0); //green text
@@ -337,32 +336,47 @@ int main() {
 	fb_write_to_gc9a01_fast(framebuffer, text_frame);
 	printf("Displayed received text over socket\n");
 
-	sleep(10);
+	sleep(5);
 
+	stop_counter ++;
+	if (stop_counter >= 50) {
+		stop_flag = 1; //for testing
+	}
+	printf("stop in %d\n", stop_counter);
 
-
-
-	//test the receiving socket here
 	int server_fd = setup_socket();
 	if (server_fd == -1) {
 		pabort("socket setup failed");
 	}
 	char buffer[1024]; //buffer for receiving strings UTF-8 encoded
-	int bytes_received = receive_data(server_fd, buffer, sizeof(buffer));
-	if (bytes_received > 0) {
-		printf("Received %d bytes\n", bytes_received);
-		// Process the received data...
+
+
+	while (stop_flag == 0) {
+		//main loop: read socket, update text framebuffer, render, write to LCD
+		int bytes_received = receive_data(server_fd, (uint8_t *)buffer, sizeof(buffer) - 1);
+		if (bytes_received > 0) {
+			buffer[bytes_received] = '\0'; //null-terminate
+		}
+		else if (bytes_received == -1) {
+			printf("Error receiving data\n");
+			continue;
+		}
+		else {
+			//no data received, continue
+			continue;
+		}
+			printf("Received %d bytes: %s\n", bytes_received, buffer);
+			fb_receive_and_update_text(framebuffer, buffer);
+			textbuffer_render(framebuffer);
+			GC9A01_set_frame(text_frame);
+			fb_write_to_gc9a01_fast(framebuffer, text_frame);
 	}
-	else if (bytes_received == -1) {
-		printf("Error receiving data\n");
-	}
-	else {
-		printf("No data received\n");
-	}
+
+
+	//cleanup
 	close_socket(server_fd);
 	printf("Socket closed\n");
 
-	//cleanup
 	free(framebuffer);
 	close_gpio();
 	printf("GPIO closed\n");

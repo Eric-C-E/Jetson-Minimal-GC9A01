@@ -1,6 +1,7 @@
 //open UNIX domain socket for receiving data
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>

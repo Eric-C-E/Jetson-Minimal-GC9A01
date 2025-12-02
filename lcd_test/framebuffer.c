@@ -220,6 +220,15 @@ void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[]) {
     size_t space_left = MAX_CHARS - strlen(lines[0]);
     if (space_left < bytes_received) {
         //fits exactly or overflows
+        //if the last character in bottom line is not a space and the first character in receive buffer is not a space, add a space
+        if (strlen(lines[0]) > 0 && lines[0][strlen(lines[0])+1] != ' ' &&
+            receive_buffer[0] != ' ') {
+            if (space_left > 0) {
+                lines[0][strlen(lines[0]+1)] = ' ';
+                space_left--;
+            }
+        }
+        //append what fits
         strncat(lines[0], receive_buffer, space_left);
         //shift up
         textbuffer_shift_up();
