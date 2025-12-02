@@ -8,6 +8,7 @@
 #include "color_utils.h"
 #include "socket_rx.h"
 #include "framebuffer.h"
+#include "startscreen.h"
 
 #include <stdint.h>
 #include <unistd.h>
@@ -282,6 +283,13 @@ int main() {
 		pabort("failed to allocate framebuffer");
 	}
 	fb_clear(framebuffer);
+
+	//draw startup screen
+	draw_startup_screen(framebuffer);
+	GC9A01_set_frame(full_frame);
+	fb_write_to_gc9a01_fast(framebuffer, full_frame);
+	printf("Displayed startup screen\n");
+	sleep(5);
 
 	//framebuffer test pattern drawing
 
