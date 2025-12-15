@@ -216,35 +216,38 @@ void fb_receive_and_update_text(uint8_t *framebuffer, char receive_buffer[]) {
     //recursive function
     //check if the string doesn't fit in the current line
     size_t bytes_received = strlen(receive_buffer);
+    char recursive_buffer[1024];
+    //debug print
+    printf("Received string of length %zu: %s\n", bytes_received, receive_buffer);
 
     size_t space_left = MAX_CHARS - strlen(lines[0]);
+    //debug print
+    printf("Space left in current line: %zu\n", space_left);
     if (space_left < bytes_received) {
         //fits exactly or overflows
-        //if the last character in bottom line is not a space and the first character in receive buffer is not a space, add a space
-        if (strlen(lines[0]) > 0 && lines[0][strlen(lines[0])+1] != ' ' &&
-            receive_buffer[0] != ' ') {
-            if (space_left > 0) {
-                lines[0][strlen(lines[0]+1)] = ' ';
-                space_left--;
-            }
-        }
         //append what fits
         strncat(lines[0], receive_buffer, space_left);
         //shift up
         textbuffer_shift_up();
+        //prepare leftover string
+        strncpy(recursive_buffer, receive_buffer + space_left, bytes_received - space_left + 1);
         //recurse with leftovers
-        fb_receive_and_update_text(framebuffer, receive_buffer + space_left);
+        fb_receive_and_update_text(framebuffer, recursive_buffer);
+        //debug print
+        printf("Recursed with leftover string: %s\n", recursive_buffer);
         return;
     } else if (space_left == bytes_received) {
         //fits exactly
         strncat(lines[0], receive_buffer, bytes_received);
         //shift up for next line
-        textbuffer_shift_up();
+        textbuffer_shift_up(); //no need for a space append here.
         return;
     }
     else {
         //fits with space left
         strncat(lines[0], receive_buffer, bytes_received);
+        //requires appending a space assuming next input starts with a word
+        strncat(lines[0], " ", 1);
         return;
     }
 }
